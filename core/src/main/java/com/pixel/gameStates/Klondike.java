@@ -138,7 +138,12 @@ public class Klondike extends PlayState{
         ArrayList<Boolean>[] cardsFaceDirection;
         ArrayList<Vector3>[] cardPositions;
 
+        String topDrawPileCard;
+
         GameSnapshot(Stack<Card> drawPile, ArrayList<Card> discardPile, ArrayList<Card> wastePile, ArrayList<Card>[] tableau, Stack<Card>[] foundation) {
+
+//            this.topDrawPileCard = drawPile.peek().getSuit().toString() + drawPile.peek().getRank().toString();
+
             // Deep copy all lists and stacks to avoid reference issues
             this.drawPile = (Stack<Card>) drawPile.clone();
             this.discardPile = new ArrayList<>(discardPile);
@@ -171,6 +176,8 @@ public class Klondike extends PlayState{
     }
 
     private void saveGameState() {
+
+//        System.out.println("Pushing gamesnap with following top draw card: " + currentGameSnapshot.drawPile.peek().getSuit().toString() + currentGameSnapshot.drawPile.peek().getRank().toString());
         history.push(currentGameSnapshot);
         currentGameSnapshot = captureGameState();
 
@@ -178,11 +185,23 @@ public class Klondike extends PlayState{
     }
 
     public void undo() {
-        if (!history.isEmpty()) {
+        if (history.size() > 1) {
             GameSnapshot previousState = history.pop();
-            drawPile = previousState.drawPile;
-            wastePile = previousState.wastePile;
-            discardPile = previousState.discardPile;
+            currentGameSnapshot = previousState;
+
+            drawPile = (Stack<Card>) previousState.drawPile.clone();
+            wastePile = new ArrayList<>(previousState.wastePile);
+            discardPile = new ArrayList<>(previousState.discardPile);
+
+            System.out.println("Draw Stack Size: " + drawPile.size() + "  discard Stack Size: " + discardPile.size());
+            System.out.println("Below is the new draw pile order/stack");
+            for (Card card: drawPile){
+                System.out.println(card.getSuit().toString() + " " + card.getRank().toString());
+            }
+            System.out.println("Below is the new discard pile order/stack");
+            for (Card card: discardPile){
+                System.out.println(card.getSuit().toString() + " " + card.getRank().toString());
+            }
 
             // Restore waste pile card positions
             if (!wastePile.isEmpty()) {
@@ -207,17 +226,21 @@ public class Klondike extends PlayState{
             }
 
             // Restore foundation cards
-            foundation = previousState.foundation;
+            foundation = new Stack[4];
             for (int i = 0; i < 4; i++) {
-                Stack<Card> foundationStack = foundation[i];
-                if (!foundationStack.isEmpty()) {
-                    Card foundationTop = foundationStack.peek();
+                foundation[i] = (Stack<Card>) previousState.foundation[i].clone();
+                if (!foundation[i].isEmpty()) {
+                    Card foundationTop = foundation[i].peek();
                     foundationTop.setFaceUp(true);
                     foundationTop.setPosition(cardDisplayMargin + (cardDisplayOffsets * (i + 3)), topRowVerticalPosition);
                 }
             }
         }
+
+        System.out.println("finishing with history size: " + history.size());
     }
+
+
 
 
 
@@ -375,14 +398,13 @@ public class Klondike extends PlayState{
         ArrayList<Card> activeStack = new ArrayList<Card>();
         hand.setActiveStack(activeStack);
 
-        saveGameState();
+        GameSnapshot initialGameSnap = captureGameState();
+        currentGameSnapshot = captureGameState();
+        history.push(captureGameState());
     }
 
 
     public void drawCards(){
-
-        saveGameState();
-
         //if the draw pile is empty, transfer cards from discard to draw
         if (drawPile.isEmpty()) {
             if (wastePile != null && !wastePile.isEmpty()) {
@@ -394,11 +416,11 @@ public class Klondike extends PlayState{
             }
             wastePile = new ArrayList<Card>();
             moveDiscardToDrawPile();
+            saveGameState(); // Ensure state is saved after transfer
             return;
         }
 
-        // if the waste pile currently has cards in it, push them to the disard pile and then empty the waste pile
-        // by creating a new array list
+        // if the waste pile currently has cards in it, push them to the discard pile and then empty the waste pile
         if (wastePile != null && !wastePile.isEmpty()){
             for (int i = 0; i < wastePile.size(); i++) {
                 Card discardedCard = wastePile.get(i);
@@ -421,9 +443,12 @@ public class Klondike extends PlayState{
             Card drawnCard = drawPile.pop();
             drawnCard.setFaceUp(true);
             wastePile.add(drawnCard);
-            drawnCard.setPosition( cardDisplayMargin + (int) (cardWidth * 1.5) + (wastePileHorizontalOffset* i), topRowVerticalPosition);
+            drawnCard.setPosition(cardDisplayMargin + (int) (cardWidth * 1.5) + (wastePileHorizontalOffset * i), topRowVerticalPosition);
         }
+
+        saveGameState();
     }
+
 
 //    public void moveCardToDiscardPile(Card card) {
 //        discardPile.push(card);
