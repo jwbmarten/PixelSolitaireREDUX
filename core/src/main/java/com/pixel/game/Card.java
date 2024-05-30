@@ -23,7 +23,7 @@ public class Card {
         this.rank = rank;
         this.isFaceUp = false;
 
-        cardBack = new Texture("card_back_pastel.png");
+        cardBack = new Texture("card_back_traditional.png");
         cardFront = new Texture(suit.toString() + "_" + rank.toString() + ".png");
         cardWidth = CardWidth;
         cardHeight = CardHeight;

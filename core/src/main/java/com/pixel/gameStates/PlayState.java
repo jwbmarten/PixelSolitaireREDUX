@@ -119,4 +119,13 @@ public class PlayState extends State {
     public boolean checkIfCardPlaced() {
         return false;
     }
+
+    @Override
+    public  boolean getOptionsPressed(){return false;};
+
+    @Override
+    public  void checkButtonHovered(float xPos, float yPos){return;};
+
 }
+
+

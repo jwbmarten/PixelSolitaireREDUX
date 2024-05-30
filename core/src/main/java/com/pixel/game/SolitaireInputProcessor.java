@@ -181,6 +181,11 @@ public class SolitaireInputProcessor implements InputProcessor {
         state.getCam().unproject(worldCoordinates); // Use viewport's camera for conversion
 //        System.out.println("Mouse moved to X position: " + worldCoordinates.x);
 //        System.out.println("Mouse moved to Y position: " + worldCoordinates.y);
+
+        if (state.getOptionsPressed()){
+            state.checkButtonHovered(worldCoordinates.x, worldCoordinates.y);
+        }
+
         state.getHand().setPosition((int) (worldCoordinates.x - state.getHand().getWidth() / 2),
             (int) (worldCoordinates.y - state.getHand().getHeight() / 2));
         return true;

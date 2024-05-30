@@ -7,7 +7,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.utils.viewport.StretchViewport;
+import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.pixel.game.Animation;
 import com.pixel.game.Card;
 import com.pixel.game.Hand;
@@ -24,13 +24,79 @@ import java.util.Stack;
 public class Klondike extends PlayState{
 
     private OrthographicCamera cam;
-    //    private ExtendViewport viewport;
-    private StretchViewport viewport;
+    private ExtendViewport viewport;
+//    private FillViewport viewport;
+//    private ScreenViewport viewport;
+//    private StretchViewport viewport;
+    private Texture optionsButton;
+    private Rectangle optionsBounds;
+
+    private Texture undoButton;
+    private Rectangle undoBounds;
+
     private Texture background;
+    private Texture menu1;
+
+    private int menuDrawX = 600;
+    private int menuDrawY = 150;
+    private int menuDrawWidth = 400;
+    private int menuDrawHeight = 640;
+
+    private int menuSmallButtonWidth = (int) (menuDrawWidth * .17) ;
+    private int menuSmallButtonHeight = (int) (menuDrawHeight * .1);
+
+    private Texture sfxOnButton;
+    private Texture sfxOffButton;
+    private Texture sfxActiveButton;
+    private Rectangle sfxBounds;
+
+    private int sfxDrawXOffset = (int) (menuDrawWidth * 0.20);
+    private int sfxDrawYOffset = (int) (menuDrawHeight * 0.77);
+
+    private Texture musicOnButton;
+    private Texture musicOffButton;
+    private Texture musicActiveButton;
+    private Rectangle musicBounds;
+
+    private int musicDrawXOffset = (int) (menuDrawWidth * 0.41);
+    private int musicDrawYOffset = (int) (menuDrawHeight * 0.77);
+
+    private Texture closeMenuButton;
+    private Rectangle closeMenuBounds;
+
+    private int closeMenuXOffset = (int) (menuDrawWidth * 0.62);
+    private int closeMenuYOffset = (int) (menuDrawHeight * 0.77);
+
+    private Texture newGameButtonActive;
     private Texture newGameButton;
-    private Rectangle restartBounds;
+    private Texture newGameButtonHover;
+    private Rectangle newGameBounds;
+
+    private int newGameXOffset = (int) (menuDrawWidth * 0.15);
+    private int newGameYOffset = (int) (menuDrawHeight * 0.54);
+    private int newGameWidth = (int) (menuDrawWidth * 0.7);
+    private int newGameHeight = (int) (menuDrawHeight * .18);
+
+    private Texture mainMenuButtonActive;
+    private Texture mainMenuButton;
+    private Texture mainMenuButtonHover;
+    private Rectangle mainMenuBounds;
+
+    private int mainMenuXOffset = (int) (menuDrawWidth * 0.13);
+    private int mainMenuYOffset = (int) (menuDrawHeight * 0.32);
+    private int mainMenuWidth = (int) (menuDrawWidth * 0.74);
+    private int mainMenuHeight = (int) (menuDrawHeight * .18);
+
+    private Texture exitGameButtonActive;
     private Texture exitGameButton;
+    private Texture exitGameButtonHover;
     private Rectangle exitGameBounds;
+
+    private int exitGameXOffset = (int) (menuDrawWidth * 0.13);
+    private int exitGameYOffset = (int) (menuDrawHeight * 0.08);
+    private int exitGameWidth = (int) (menuDrawWidth * 0.74);
+    private int exitGameHeight = (int) (menuDrawHeight * .18);
+
     private Animation winAnimation;
     private Texture cardBack;
     private Texture noCard;
@@ -38,6 +104,7 @@ public class Klondike extends PlayState{
     private SolitaireInputProcessor solitaireInputProcessor;
 
     private boolean gameIsWon;
+    private boolean optionsPressed;
 
 
     private List<Card> deck;
@@ -47,6 +114,8 @@ public class Klondike extends PlayState{
     private Rectangle drawPileBounds;
     private ArrayList<Card> wastePile;
     private ArrayList<Card> discardPile;
+
+    private Stack<GameSnapshot> history;
 
     private int cardDisplayMargin;
     private int cardDisplayOffsets;
@@ -58,28 +127,116 @@ public class Klondike extends PlayState{
     int cardHeight = (int) (cardWidth * 1.25);
     private int tableauOffset = (int) (cardHeight * 0.2);
 
+    class GameSnapshot{
+        Stack<Card> drawPile;
+        ArrayList<Card> wastePile;
+        ArrayList<Card> discardPile;
+        ArrayList<Card>[] tableau;
+        Stack<Card>[] foundation;
+
+        GameSnapshot(Stack<Card> drawPile, ArrayList<Card> discardPile, ArrayList<Card> wastePile, ArrayList<Card>[] tableau, Stack<Card>[] foundation) {
+            // Deep copy all lists and stacks to avoid reference issues
+            Stack<Card> tempStack = new Stack<>();
+            tempStack.addAll(drawPile);
+            this.drawPile = tempStack;
+            this.discardPile = new ArrayList<>(discardPile);
+            this.tableau = new ArrayList[tableau.length];
+            this.wastePile = new ArrayList<>(wastePile);
+            for (int i = 0; i < tableau.length; i++) {
+                this.tableau[i] = new ArrayList<>(tableau[i]);
+            }
+            this.foundation = new Stack[foundation.length];
+            for (int i = 0; i < foundation.length; i++) {
+                this.foundation[i] = (Stack<Card>) foundation[i].clone();
+            }
+        }
+    }
+
+    private GameSnapshot captureGameState() {
+        System.out.println("Gamesnap captured!");
+        return new GameSnapshot(drawPile, discardPile, wastePile, tableau, foundation);
+    }
+
+    private void saveGameState() {
+        history.push(captureGameState());
+    }
+
+    public void undo() {
+        if (!history.isEmpty()) {
+            GameSnapshot previousState = history.pop();
+            drawPile = previousState.drawPile;
+            wastePile = previousState.wastePile;
+            for (Card card: wastePile){
+                card.setFaceUp(true);
+            }
+            tableau = previousState.tableau;
+            foundation = previousState.foundation;
+        }
+    }
+
+
     public Klondike(GameStateManager gsm) {
+
         super(gsm);
 
         gameIsWon = false;
+        optionsPressed = false;
 
         solitaireInputProcessor = new SolitaireInputProcessor(this);
         Gdx.input.setInputProcessor(solitaireInputProcessor);
         cam = new OrthographicCamera();
         cam.setToOrtho(false, PixelSolitaire.WIDTH, PixelSolitaire.HEIGHT);
-//        viewport = new ExtendViewport(PixelSolitaire.WIDTH, PixelSolitaire.HEIGHT, cam);
-        viewport = new StretchViewport(PixelSolitaire.WIDTH, PixelSolitaire.HEIGHT, cam);
+//        viewport = new FillViewport(PixelSolitaire.WIDTH, PixelSolitaire.HEIGHT, cam);
+        viewport = new ExtendViewport(PixelSolitaire.WIDTH, PixelSolitaire.HEIGHT, cam);
+//        viewport = new StretchViewport(PixelSolitaire.WIDTH, PixelSolitaire.HEIGHT, cam);
+//        viewport = new ScreenViewport(cam);
 
 
-        hand = new Hand(50, 50, PixelSolitaire.WIDTH/28,(int) (PixelSolitaire.WIDTH/21 * 1.2));
+        hand = new Hand(35, 35, PixelSolitaire.WIDTH/35,(int) (PixelSolitaire.WIDTH/25 * 1.2));
+//        hand = new Hand(50, 50, (int) PixelSolitaire.WIDTH/28, (int) (PixelSolitaire.WIDTH/28));
+
 
         background = new Texture("gameGreenBackground.png");
-        newGameButton = new Texture("newGameButton.png");
-        restartBounds = new Rectangle(5, 5, 186, 53);
-        exitGameButton = new Texture("exitGameButton.png");
-        exitGameBounds = new Rectangle(1400, 5, 186, 53);
+
+//        menu1 = new Texture("menuWorking2.png");
+        menu1 = new Texture("menuBlank.png");
+
+        optionsButton = new Texture("optionsButton.png");
+        optionsBounds = new Rectangle(5, 5, 186, 53);
+
+        undoButton = new Texture("undoButton.png");
+        undoBounds = new Rectangle(210, 5, 55, 55);
+
+        sfxOnButton = new Texture("SFXOn.png");
+        sfxOffButton = new Texture("SFXOff.png");
+        sfxActiveButton = sfxOnButton;
+        sfxBounds = new Rectangle(menuDrawX + sfxDrawXOffset, menuDrawY + sfxDrawYOffset, menuSmallButtonWidth, menuSmallButtonHeight);
+
+        musicOnButton = new Texture("MusicOn.png");
+        musicOffButton = new Texture("MusicOff.png");
+        musicActiveButton = musicOnButton;
+        musicBounds = new Rectangle(menuDrawX + musicDrawXOffset, menuDrawY + musicDrawYOffset, menuSmallButtonWidth, menuSmallButtonHeight);
+
+        closeMenuButton = new Texture("closeMenu.png");
+        closeMenuBounds = new Rectangle(menuDrawX + closeMenuXOffset, menuDrawY + closeMenuYOffset, menuSmallButtonWidth, menuSmallButtonHeight);
+
+        newGameButton = new Texture("menuNewGame.png");
+        newGameButtonHover = new Texture("menuNewGameHover.png");
+        newGameBounds = new Rectangle(menuDrawX + newGameXOffset, menuDrawY + newGameYOffset, newGameWidth, newGameHeight);
+        newGameButtonActive = newGameButton;
+
+        mainMenuButton = new Texture("menuMainMenu.png");
+        mainMenuButtonHover = new Texture("menuMainMenuHover.png");
+        mainMenuBounds = new Rectangle(menuDrawX + mainMenuXOffset, menuDrawY + mainMenuYOffset, mainMenuWidth, mainMenuHeight);
+        mainMenuButtonActive = mainMenuButton;
+
+        exitGameButton = new Texture("menuExitGame.png");
+        exitGameButtonHover = new Texture("menuExitGameHover.png");
+        exitGameBounds = new Rectangle(menuDrawX + exitGameXOffset, menuDrawY + exitGameYOffset, exitGameWidth, exitGameHeight);
+        exitGameButtonActive = exitGameButton;
+
 //        cardBack = new Texture("card_back.png");
-        cardBack = new Texture("card_back_pastel.png");
+        cardBack = new Texture("card_back_traditional.png");
         noCard = new Texture("NOCARD.png");
 
         //horizontal left margin for displaying cards
@@ -105,6 +262,8 @@ public class Klondike extends PlayState{
     private void initializeGame() {
 
         gameIsWon = false;
+
+        history = new Stack<GameSnapshot>();
 
         // Create a deck of cards
         deck = new ArrayList<>();
@@ -170,10 +329,13 @@ public class Klondike extends PlayState{
         ArrayList<Card> activeStack = new ArrayList<Card>();
         hand.setActiveStack(activeStack);
 
+        saveGameState();
     }
 
 
     public void drawCards(){
+
+        saveGameState();
 
         //if the draw pile is empty, transfer cards from discard to draw
         if (drawPile.isEmpty()) {
@@ -284,108 +446,32 @@ public class Klondike extends PlayState{
     }
 
     @Override
-    public void render(SpriteBatch sb) {
-
-        resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
-
-        //setting the projection matrix I think because we resized the camera view
-        sb.setProjectionMatrix(cam.combined);
-
-        sb.begin();
-        //draw the background
-        sb.draw(background, 0, 0, 4400, 2000);
-
-        //draw the restart button
-        sb.draw(newGameButton, 5, 5, 186, 53);
-
-        sb.draw(exitGameButton, 1400, 5, 186, 53);
-
-        //if the draw pile is not empty, draw a card back, otherwise draw the no card border
-        if (!drawPile.isEmpty()){ sb.draw(cardBack, cardDisplayMargin, topRowVerticalPosition, cardWidth, cardHeight);}
-        else {sb.draw(noCard, cardDisplayMargin, topRowVerticalPosition, cardWidth, cardHeight);}
-
-        // draw the waste pile
-        if (wastePile != null && !wastePile.isEmpty()){
-
-//            int wastePileHorizontalOffset = (int) (cardWidth*.15);
-
-            for (Card card: wastePile){
-                sb.draw(card.getTexture(), card.getPosition().x, card.getPosition().y, cardWidth, cardHeight);
-//                wastePileHorizontalOffset += wastePileHorizontalOffset;
-            }
-        }
-
-        ////////////////////////////
-        // draw the foundation
-
-        for (int i =0; i <4; i++){
-            Card topFoundation = foundation[i].get(foundation[i].size() -1);
-            sb.draw(topFoundation.getTexture(), topFoundation.getPosition().x, topFoundation.getPosition().y, topFoundation.getCardWidth(), topFoundation.getCardHeight() );
-        }
-
-        ////////////////////////////
-        //draw the tableau
-        // for each column in the tableau
-        for (int i =0; i < 7; i++){
-
-            ArrayList<Card> tableauStack = tableau[i];
-
-            int currentCardVertOffset = 0;
-
-            if (!tableauStack.isEmpty()){
-
-                for (Card card: tableauStack){
-                    if (card.equals(hand.getActiveCard())){continue;}
-                    sb.draw(card.getTexture(), card.getPosition().x , card.getPosition().y, card.getCardWidth(), card.getCardHeight());
-                }
-            }
-
-
-        }
-
-
-
-        if (hand.getActiveStack() != null && !hand.getActiveStack().isEmpty()){
-            for (Card card: getHand().getActiveStack()){
-                sb.draw(card.getTexture(), card.getPosition().x , card.getPosition().y, card.getCardWidth(), card.getCardHeight());
-            }
-        }
-
-
-
-//        cardDisplayMargin = 40;
-
-
-        if (hand.getActiveStack() != null && hand.getActiveStack().isEmpty()){
-            if (hand.getActiveCard() != null && hand.checkHasActiveCard()){
-                Card card = hand.getActiveCard();
-                sb.draw(card.getTexture(), card.getPosition().x , card.getPosition().y, card.getCardWidth(), card.getCardHeight());
-            }
-        }
-
-        //draw the hand
-        sb.draw(hand.getTexture(), hand.getPosition().x, hand.getPosition().y, hand.getWidth(), hand.getHeight());
-
-        if (gameIsWon){
-            sb.draw(winAnimation.getFrame(), 500, 150, 600, 600);
-        }
-
-        sb.end();
-
-    }
-
-    @Override
     public void checkIfCardClicked(float xPos, float yPos) {
         int intXPos = (int) xPos;
         int intYPos = (int) yPos;
 
-        //check if the restart button was clicked
-        if (restartBounds.contains(intXPos, intYPos)){
+        //check if the options button was clicked
+        if (optionsBounds.contains(intXPos, intYPos)){
+            optionsPressed = true;
+//            initializeGame();
+        }
+
+        //check if undo button was clicked
+        if (undoBounds.contains(intXPos, intYPos)){
+            undo();
+        }
+
+        if (optionsPressed && newGameBounds.contains(intXPos, intYPos)){
             initializeGame();
+            optionsPressed = false;
+        }
+
+        if (optionsPressed && closeMenuBounds.contains(intXPos, intYPos)){
+            optionsPressed = false;
         }
 
         //check if the exit game button was clicked
-        if (exitGameBounds.contains(intXPos, intYPos)){
+        if (optionsPressed && exitGameBounds.contains(intXPos, intYPos)){
             Gdx.app.exit();
         }
 
@@ -451,6 +537,10 @@ public class Klondike extends PlayState{
 
             if (hand.getActiveCard().getBounds().overlaps(topFoundation.getBounds())){
                 if (canCardBePlacedOnFoundation(hand.getActiveCard(), topFoundation)){
+
+                    /// GET SNAPSHOP /////////
+                    saveGameState();
+
                     hand.getActiveCard().setPosition(cardDisplayMargin + (cardDisplayOffsets * (i + 3)), topRowVerticalPosition);
                     foundationStack.push(hand.getActiveCard());
 
@@ -477,6 +567,9 @@ public class Klondike extends PlayState{
             Card tableauBottom = tableauStack.get(tableauStack.size() - 1);
             if (hand.getActiveCard().getBounds().overlaps(tableauBottom.getBounds())) {
                 if (checkCardCanBePlaced(tableauBottom, hand.getActiveCard())) {
+
+                    /// GET SNAPSHOP /////////
+                    saveGameState();
 
                     //if a foundation card is being placed back in the tableau
                     if (hand.getActiveCardType().equals("foundation")){
@@ -593,5 +686,137 @@ public class Klondike extends PlayState{
 
     }
 
+    @Override
+    public boolean getOptionsPressed(){return optionsPressed;}
+
+    @Override
+    public void checkButtonHovered(float xPos, float yPos){
+        int intXPos = (int) xPos;
+        int intYPos = (int) yPos;
+
+        if (newGameBounds.contains(intXPos, intYPos)){
+            newGameButtonActive = newGameButtonHover;
+        } else {
+            newGameButtonActive = newGameButton;
+        }
+
+        if (mainMenuBounds.contains(intXPos, intYPos)){
+            mainMenuButtonActive = mainMenuButtonHover;
+        } else {
+            mainMenuButtonActive = mainMenuButton;
+        }
+
+        if (exitGameBounds.contains(intXPos, intYPos)){
+            exitGameButtonActive = exitGameButtonHover;
+        } else {
+            exitGameButtonActive = exitGameButton;
+        }
+    }
+
+
+    @Override
+    public void render(SpriteBatch sb) {
+
+        resize(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+
+        //setting the projection matrix I think because we resized the camera view
+        sb.setProjectionMatrix(cam.combined);
+
+        sb.begin();
+        //draw the background
+        sb.draw(background, 0, 0, 4400, 2000);
+
+
+        //draw the options button
+        sb.draw(optionsButton, 5, 5, 186, 53);
+
+        //draw the undo button
+        sb.draw(undoButton, 210, 5, 55, 55);
+
+//        sb.draw(exitGameButton, 1400, 5, 186, 53);
+
+        //if the draw pile is not empty, draw a card back, otherwise draw the no card border
+        if (!drawPile.isEmpty()){ sb.draw(cardBack, cardDisplayMargin, topRowVerticalPosition, cardWidth, cardHeight);}
+        else {sb.draw(noCard, cardDisplayMargin, topRowVerticalPosition, cardWidth, cardHeight);}
+
+        // draw the waste pile
+        if (wastePile != null && !wastePile.isEmpty()){
+
+//            int wastePileHorizontalOffset = (int) (cardWidth*.15);
+
+            for (Card card: wastePile){
+                sb.draw(card.getTexture(), card.getPosition().x, card.getPosition().y, cardWidth, cardHeight);
+//                wastePileHorizontalOffset += wastePileHorizontalOffset;
+            }
+        }
+
+        ////////////////////////////
+        // draw the foundation
+
+        for (int i =0; i <4; i++){
+            Card topFoundation = foundation[i].get(foundation[i].size() -1);
+            sb.draw(topFoundation.getTexture(), topFoundation.getPosition().x, topFoundation.getPosition().y, topFoundation.getCardWidth(), topFoundation.getCardHeight() );
+        }
+
+        ////////////////////////////
+        //draw the tableau
+        // for each column in the tableau
+        for (int i =0; i < 7; i++){
+
+            ArrayList<Card> tableauStack = tableau[i];
+
+            int currentCardVertOffset = 0;
+
+            if (!tableauStack.isEmpty()){
+
+                for (Card card: tableauStack){
+                    if (card.equals(hand.getActiveCard())){continue;}
+                    sb.draw(card.getTexture(), card.getPosition().x , card.getPosition().y, card.getCardWidth(), card.getCardHeight());
+                }
+            }
+
+
+        }
+
+
+
+        if (hand.getActiveStack() != null && !hand.getActiveStack().isEmpty()){
+            for (Card card: getHand().getActiveStack()){
+                sb.draw(card.getTexture(), card.getPosition().x , card.getPosition().y, card.getCardWidth(), card.getCardHeight());
+            }
+        }
+
+
+
+//        cardDisplayMargin = 40;
+
+
+        if (hand.getActiveStack() != null && hand.getActiveStack().isEmpty()){
+            if (hand.getActiveCard() != null && hand.checkHasActiveCard()){
+                Card card = hand.getActiveCard();
+                sb.draw(card.getTexture(), card.getPosition().x , card.getPosition().y, card.getCardWidth(), card.getCardHeight());
+            }
+        }
+
+        if (optionsPressed) {
+            sb.draw(menu1, menuDrawX, menuDrawY, menuDrawWidth, menuDrawHeight);
+            sb. draw(sfxActiveButton, menuDrawX + sfxDrawXOffset, menuDrawY + sfxDrawYOffset, menuSmallButtonWidth, menuSmallButtonHeight);
+            sb.draw(musicActiveButton, menuDrawX + musicDrawXOffset, menuDrawY + musicDrawYOffset, menuSmallButtonWidth, menuSmallButtonHeight);
+            sb.draw(closeMenuButton, menuDrawX + closeMenuXOffset, menuDrawY + closeMenuYOffset, menuSmallButtonWidth, menuSmallButtonHeight);
+            sb.draw(newGameButtonActive, menuDrawX + newGameXOffset, menuDrawY + newGameYOffset, newGameWidth, newGameHeight);
+            sb.draw(mainMenuButtonActive, menuDrawX + mainMenuXOffset, menuDrawY + mainMenuYOffset, mainMenuWidth, mainMenuHeight);
+            sb.draw(exitGameButtonActive, menuDrawX + exitGameXOffset, menuDrawY + exitGameYOffset, exitGameWidth, exitGameHeight);
+        }
+
+        if (gameIsWon){
+            sb.draw(winAnimation.getFrame(), 500, 150, 600, 600);
+        }
+
+        //draw the hand
+        sb.draw(hand.getTexture(), hand.getPosition().x, hand.getPosition().y, hand.getWidth(), hand.getHeight());
+
+        sb.end();
+
+    }
 
 }

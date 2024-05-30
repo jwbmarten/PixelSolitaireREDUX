@@ -62,6 +62,8 @@ public abstract class State {
 
     public abstract boolean checkIfCardPlaced();
 
+    public abstract boolean getOptionsPressed();
 
+    public abstract void checkButtonHovered(float xPos, float yPos);
 
 }

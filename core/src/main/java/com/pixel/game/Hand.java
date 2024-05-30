@@ -32,11 +32,15 @@ public class Hand {
 
     private boolean isClosed;
 
+    public static final int handDrawWidth = 30;
+    public static final int handDrawHeight = 30;
+
     public Hand(int x, int y, int width, int height){
 
         position = new Vector3(x, y, 0);
 
         openHand = new Texture("handUI.png");
+//        openHand = new Texture("cursor_hand.png");
         closedHand = new Texture("handUIClosed.png");
 
         isClosed = false;
@@ -186,5 +190,7 @@ public class Hand {
     }
 
     public String getActiveCardType(){return activeCardType;}
+
+
 
 }
