@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.viewport.ExtendViewport;
 import com.pixel.game.Animation;
 import com.pixel.game.Card;
@@ -115,6 +116,7 @@ public class Klondike extends PlayState{
     private ArrayList<Card> wastePile;
     private ArrayList<Card> discardPile;
 
+    private GameSnapshot currentGameSnapshot;
     private Stack<GameSnapshot> history;
 
     private int cardDisplayMargin;
@@ -127,24 +129,34 @@ public class Klondike extends PlayState{
     int cardHeight = (int) (cardWidth * 1.25);
     private int tableauOffset = (int) (cardHeight * 0.2);
 
-    class GameSnapshot{
+    class GameSnapshot {
         Stack<Card> drawPile;
         ArrayList<Card> wastePile;
         ArrayList<Card> discardPile;
         ArrayList<Card>[] tableau;
         Stack<Card>[] foundation;
+        ArrayList<Boolean>[] cardsFaceDirection;
+        ArrayList<Vector3>[] cardPositions;
 
         GameSnapshot(Stack<Card> drawPile, ArrayList<Card> discardPile, ArrayList<Card> wastePile, ArrayList<Card>[] tableau, Stack<Card>[] foundation) {
             // Deep copy all lists and stacks to avoid reference issues
-            Stack<Card> tempStack = new Stack<>();
-            tempStack.addAll(drawPile);
-            this.drawPile = tempStack;
+            this.drawPile = (Stack<Card>) drawPile.clone();
             this.discardPile = new ArrayList<>(discardPile);
-            this.tableau = new ArrayList[tableau.length];
             this.wastePile = new ArrayList<>(wastePile);
+
+            this.tableau = new ArrayList[tableau.length];
+            this.cardsFaceDirection = new ArrayList[tableau.length];
+            this.cardPositions = new ArrayList[tableau.length];
             for (int i = 0; i < tableau.length; i++) {
                 this.tableau[i] = new ArrayList<>(tableau[i]);
+                this.cardsFaceDirection[i] = new ArrayList<>();
+                this.cardPositions[i] = new ArrayList<>();
+                for (Card card : this.tableau[i]) {
+                    this.cardsFaceDirection[i].add(card.isFaceUp());
+                    this.cardPositions[i].add(new Vector3(card.getPosition()));
+                }
             }
+
             this.foundation = new Stack[foundation.length];
             for (int i = 0; i < foundation.length; i++) {
                 this.foundation[i] = (Stack<Card>) foundation[i].clone();
@@ -152,13 +164,17 @@ public class Klondike extends PlayState{
         }
     }
 
+
     private GameSnapshot captureGameState() {
         System.out.println("Gamesnap captured!");
         return new GameSnapshot(drawPile, discardPile, wastePile, tableau, foundation);
     }
 
     private void saveGameState() {
-        history.push(captureGameState());
+        history.push(currentGameSnapshot);
+        currentGameSnapshot = captureGameState();
+
+        ;
     }
 
     public void undo() {
@@ -166,20 +182,50 @@ public class Klondike extends PlayState{
             GameSnapshot previousState = history.pop();
             drawPile = previousState.drawPile;
             wastePile = previousState.wastePile;
-            for (Card card: wastePile){
-                card.setFaceUp(true);
+            discardPile = previousState.discardPile;
+
+            // Restore waste pile card positions
+            if (!wastePile.isEmpty()) {
+                int iDraw = 0;
+                for (Card card : wastePile) {
+                    card.setPosition(cardDisplayMargin + (int) (cardWidth * 1.5) + (wastePileHorizontalOffset * iDraw), topRowVerticalPosition);
+                    iDraw++;
+                    card.setFaceUp(true);
+                }
             }
-            tableau = previousState.tableau;
+
+            // Restore tableau cards
+            for (int i = 0; i < 7; i++) {
+                tableau[i] = new ArrayList<>(previousState.tableau[i]);
+                int currentCardVertOffset = 0;
+                for (int j = 1; j < tableau[i].size(); j++) {
+                    Card card = tableau[i].get(j);
+                    card.setFaceUp(previousState.cardsFaceDirection[i].get(j));
+                    card.setPosition((int) previousState.cardPositions[i].get(j).x, (int) previousState.cardPositions[i].get(j).y);
+                    currentCardVertOffset += (int) tableauOffset * 0.75;
+                }
+            }
+
+            // Restore foundation cards
             foundation = previousState.foundation;
+            for (int i = 0; i < 4; i++) {
+                Stack<Card> foundationStack = foundation[i];
+                if (!foundationStack.isEmpty()) {
+                    Card foundationTop = foundationStack.peek();
+                    foundationTop.setFaceUp(true);
+                    foundationTop.setPosition(cardDisplayMargin + (cardDisplayOffsets * (i + 3)), topRowVerticalPosition);
+                }
+            }
         }
     }
+
 
 
     public Klondike(GameStateManager gsm) {
 
         super(gsm);
 
-        gameIsWon = false;
+//        gameIsWon = true;
         optionsPressed = false;
 
         solitaireInputProcessor = new SolitaireInputProcessor(this);
@@ -538,8 +584,6 @@ public class Klondike extends PlayState{
             if (hand.getActiveCard().getBounds().overlaps(topFoundation.getBounds())){
                 if (canCardBePlacedOnFoundation(hand.getActiveCard(), topFoundation)){
 
-                    /// GET SNAPSHOP /////////
-                    saveGameState();
 
                     hand.getActiveCard().setPosition(cardDisplayMargin + (cardDisplayOffsets * (i + 3)), topRowVerticalPosition);
                     foundationStack.push(hand.getActiveCard());
@@ -557,6 +601,8 @@ public class Klondike extends PlayState{
                             tableau[hand.getActiveStackTableauColumn()].get(hand.getActiveStackTableauCardNum() - 1).setFaceUp(true);
                         }
                     }
+                    /// GET SNAPSHOT /////////
+                    saveGameState();
                     return true;
                 }
             }
@@ -568,9 +614,6 @@ public class Klondike extends PlayState{
             if (hand.getActiveCard().getBounds().overlaps(tableauBottom.getBounds())) {
                 if (checkCardCanBePlaced(tableauBottom, hand.getActiveCard())) {
 
-                    /// GET SNAPSHOP /////////
-                    saveGameState();
-
                     //if a foundation card is being placed back in the tableau
                     if (hand.getActiveCardType().equals("foundation")){
                         Card activeCard = hand.getActiveCard();
@@ -581,6 +624,9 @@ public class Klondike extends PlayState{
                         tableau[i].add(activeCard);
                         foundation[hand.getActiveCardFoundationIndex()].pop();
                         hand.clearActiveHand();
+
+                        /// GET SNAPSHOT /////////
+                        saveGameState();
                         return true;
                     }
 
@@ -594,6 +640,10 @@ public class Klondike extends PlayState{
                         if(hand.getActiveCardType().equals("waste")){
                             wastePile.remove(wastePile.size()-1);
                         }
+
+                        /// GET SNAPSHOT /////////
+                        saveGameState();
+
                         return true;
                     }
 
@@ -615,6 +665,9 @@ public class Klondike extends PlayState{
                         if (hand.getActiveStackTableauCardNum() > 0) {
                             tableau[hand.getActiveStackTableauColumn()].get(hand.getActiveStackTableauCardNum() - 1).setFaceUp(true);
                         }
+
+                        /// GET SNAPSHOT /////////
+                        saveGameState();
 
                         return true;}
                 }
@@ -809,6 +862,7 @@ public class Klondike extends PlayState{
         }
 
         if (gameIsWon){
+            Gdx.graphics.requestRendering();
             sb.draw(winAnimation.getFrame(), 500, 150, 600, 600);
         }
 

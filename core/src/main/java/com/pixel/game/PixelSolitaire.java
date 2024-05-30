@@ -24,6 +24,9 @@ public class PixelSolitaire extends ApplicationAdapter {
     @Override
     public void create () {
 
+        Gdx.graphics.setContinuousRendering(false);
+        Gdx.graphics.requestRendering();
+
         batch = new SpriteBatch();
         gsm = new GameStateManager();
         gsm.push(new MenuState(gsm));
