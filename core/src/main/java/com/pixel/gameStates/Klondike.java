@@ -1,6 +1,8 @@
 package com.pixel.gameStates;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Camera;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -51,16 +53,27 @@ public class Klondike extends PlayState{
     private Texture sfxActiveButton;
     private Rectangle sfxBounds;
 
-    private int sfxDrawXOffset = (int) (menuDrawWidth * 0.20);
-    private int sfxDrawYOffset = (int) (menuDrawHeight * 0.77);
+    private int musicDrawXOffset = (int) (menuDrawWidth * 0.20);
+    private int musicDrawYOffset = (int) (menuDrawHeight * 0.77);
+//    private int sfxDrawXOffset = (int) (menuDrawWidth * 0.20);
+//    private int sfxDrawYOffset = (int) (menuDrawHeight * 0.77);
 
+    private Music music;
+    private boolean musicIsOn;
     private Texture musicOnButton;
     private Texture musicOffButton;
     private Texture musicActiveButton;
     private Rectangle musicBounds;
 
-    private int musicDrawXOffset = (int) (menuDrawWidth * 0.41);
-    private int musicDrawYOffset = (int) (menuDrawHeight * 0.77);
+
+    private Sound grabCard;
+    private Sound placeCard;
+    private boolean sfxIsOn;
+
+//    private int musicDrawXOffset = (int) (menuDrawWidth * 0.41);
+//    private int musicDrawYOffset = (int) (menuDrawHeight * 0.77);
+    private int sfxDrawXOffset = (int) (menuDrawWidth * 0.41);
+    private int sfxDrawYOffset = (int) (menuDrawHeight * 0.77);
 
     private Texture closeMenuButton;
     private Rectangle closeMenuBounds;
@@ -278,9 +291,16 @@ public class Klondike extends PlayState{
 
         sfxOnButton = new Texture("SFXOn.png");
         sfxOffButton = new Texture("SFXOff.png");
+        sfxIsOn= true;
         sfxActiveButton = sfxOnButton;
         sfxBounds = new Rectangle(menuDrawX + sfxDrawXOffset, menuDrawY + sfxDrawYOffset, menuSmallButtonWidth, menuSmallButtonHeight);
+        grabCard = Gdx.audio.newSound(Gdx.files.internal("grabCard.mp3"));
+        placeCard = Gdx.audio.newSound(Gdx.files.internal("placeCard.mp3"));
 
+        musicIsOn = true;
+        music = Gdx.audio.newMusic(Gdx.files.internal("peacefully.mp3"));
+        music.play();
+        music.setVolume(0.5f);
         musicOnButton = new Texture("MusicOn.png");
         musicOffButton = new Texture("MusicOff.png");
         musicActiveButton = musicOnButton;
@@ -532,6 +552,14 @@ public class Klondike extends PlayState{
             undo();
         }
 
+        if (optionsPressed && sfxBounds.contains(intXPos, intYPos)){
+            toggleSFX();
+        }
+
+        if (optionsPressed && musicBounds.contains(intXPos, intYPos)){
+            toggleMusic();
+        }
+
         if (optionsPressed && newGameBounds.contains(intXPos, intYPos)){
             initializeGame();
             optionsPressed = false;
@@ -555,6 +583,7 @@ public class Klondike extends PlayState{
         if (wastePile != null && !wastePile.isEmpty()){
             Card topWaste = wastePile.get(wastePile.size()-1);
             if (topWaste.getBounds().contains(intXPos, intYPos)){
+                playGrabCard();
                 hand.setActiveCard(topWaste, intXPos, intYPos);
                 ArrayList<Card> activeStack = new ArrayList<Card>();
                 activeStack.add(topWaste);
@@ -569,6 +598,7 @@ public class Klondike extends PlayState{
             if (topFoundation.getRank() != Rank.NOCARD){
                 Rectangle cardBounds = topFoundation.getBounds();
                 if(cardBounds.contains(intXPos, intYPos)){
+                    playGrabCard();
                     hand.setActiveCard(topFoundation, intXPos, intYPos, i);
                     ArrayList<Card> activeStack = new ArrayList<Card>();
                     activeStack.add(topFoundation);
@@ -587,6 +617,7 @@ public class Klondike extends PlayState{
                         Rectangle cardBounds = card.getBounds();
                         if (cardBounds.contains(intXPos, intYPos)) {
                             // The click is within the bounds of this card
+                            playGrabCard();
                             hand.setActiveCard(card, intXPos, intYPos, i, j);
                             ArrayList<Card> activeStack = new ArrayList<>(tableauStack.subList(j, tableauStack.size()));
                             hand.setActiveStack(activeStack);
@@ -609,7 +640,7 @@ public class Klondike extends PlayState{
             if (hand.getActiveCard().getBounds().overlaps(topFoundation.getBounds())){
                 if (canCardBePlacedOnFoundation(hand.getActiveCard(), topFoundation)){
 
-
+                    playPlaceCard();
                     hand.getActiveCard().setPosition(cardDisplayMargin + (cardDisplayOffsets * (i + 3)), topRowVerticalPosition);
                     foundationStack.push(hand.getActiveCard());
 
@@ -639,6 +670,7 @@ public class Klondike extends PlayState{
             if (hand.getActiveCard().getBounds().overlaps(tableauBottom.getBounds())) {
                 if (checkCardCanBePlaced(tableauBottom, hand.getActiveCard())) {
 
+                    playPlaceCard();
                     //if a foundation card is being placed back in the tableau
                     if (hand.getActiveCardType().equals("foundation")){
                         Card activeCard = hand.getActiveCard();
@@ -764,6 +796,40 @@ public class Klondike extends PlayState{
 
     }
 
+    private void toggleMusic(){
+        if (musicIsOn){
+            musicIsOn = false;
+            musicActiveButton = musicOffButton;
+            music.pause();
+        } else {
+            musicIsOn = true;
+            musicActiveButton = musicOnButton;
+            music.play();
+        }
+    }
+
+    private void toggleSFX(){
+        if (sfxIsOn){
+            sfxIsOn = false;
+            sfxActiveButton = sfxOffButton;
+        } else {
+            sfxIsOn = true;
+            sfxActiveButton = sfxOnButton;
+        }
+    }
+
+    public void playGrabCard(){
+        if (sfxIsOn){
+            grabCard.play();
+        }
+    }
+
+    public void playPlaceCard(){
+        if (sfxIsOn){
+            placeCard.play();
+        }
+    }
+
     @Override
     public boolean getOptionsPressed(){return optionsPressed;}
 
@@ -852,8 +918,6 @@ public class Klondike extends PlayState{
                     sb.draw(card.getTexture(), card.getPosition().x , card.getPosition().y, card.getCardWidth(), card.getCardHeight());
                 }
             }
-
-
         }
 
 
