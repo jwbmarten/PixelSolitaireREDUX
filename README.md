@@ -86,7 +86,7 @@
 
 <img src="assets/backgroundNEW.png" alt="Logo" width="900" height="600">
 
-My Grandfather has always been a massive fan of Solitaire. As a kid growing up I spent most of my summers with him, and nearly every night he would sit at the kitchen table playing round after round with his old card deck he had since his Air Force days. As a gift to him, and a challenge to myself, I wanted to create a desktop version of the game that he would be able to easily install and play on his Windows machine, and thus PixelSolitaire was born. Rather than use a simplified game engine such as Unity or Godot, I wanted to write as much of the game myself as I could in a feasible timeframe. I settled on using LibGDX, which is a basic game framework written in Java and has a small but dedicated userbase. 
+Growing up I spent most of my summers with my Grandpa. Nearly every night he would sit at the kitchen table playing round after round with his old card deck he had since his Air Force days. As a gift to him, and a challenge to myself, I wanted to create a desktop version of the game that he would be able to easily install and play on his Windows machine, and thus PixelSolitaire was born. Rather than use a simplified game engine such as Unity or Godot, I wanted to write as much of the game myself as I could in a feasible timeframe. I settled on using LibGDX, which is a basic game framework written in Java and has a small but dedicated userbase. 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -143,6 +143,8 @@ This game was created using LibGDX, which is a Java-based game framework (NOT an
 
 Step 1 is run only once when the game is first launched, and then steps 2 and 3 are run repeatedly at a frequency determined by the user's machine (effectively being the frame rate).
 
+<img src="assets/gameLayout.png" alt="Logo" width="900" height="600">
+
 ### Game Logic - Set Up
 
 The bulk of the game logic can be found in the Java class: 
@@ -173,11 +175,14 @@ To properly emulate the classic desktop Solitaire experience, it is important to
 
 You will notice in the SolitaireInputProcessor constructor, I have given it an argument of "State." This State is actually the Klondike.java class we have been discussing, and by providing it to the input processor, information such as cursor position, card positions, camera projection, and more can be passed back and forth.
 
+
 There are 4 primary inputs handled in the SolitaireInputProcessor class, they are:
 1. touchDown: this is called when a mouse click is registered. It takes the X-Y position of the click and then sends it to the Klondike state instance and performs the method checkIfCardClicked. It also changes the state of the cursor hand from open to closed.
 2. touchUp: this is called with a mouse click is released. It takes the X-Y position of the current mouse position and sends it to the Klondike state instance to check if a valid placement has been performed. If a valid placement is performed, then it will be executed in the Klondike instance and then the method is complete, otherwise a series of operations are called to return the active card(s) to the original state and postion before the user grabbed and dragged the card(s).
 3. touchDragged: this is called when the user moves the cursor with an active mouse click. First it updates the position of the hand object so it will be rendered in the correct position in the next cycle, then if it has an active card, it will update the position of that card (and any on top of it if moving a stack) so that it too will be rendered in the right position in the next cycle. 
 4. mouseMoved: this is called when the user moves the cursor without an active mouse click. It will update the position of the hand object for rendering, but it will also check if the menu is active, and if the menu is active if any buttons are being hovered which will require a hover response. 
+
+<img src="assets/placingLogic.png" alt="Logo" width="781" height="701">
 
 In the Klondike class, the two methods referenced above - checkIfCardClicked and checkIfCardPlaced - do a lot of the heavy lifting when it comes to interaction logic. 
 
@@ -190,6 +195,8 @@ checkIfCardPlaced does not take any arguments directly, but is called when touch
 One of the most popular features of desktop solitaire is the undo function. To implement this functionality, a stack of object type "gameSnapshot" is maintained to track move history. When cards are successfuly moved, a snapshot of the draw deck, waste pile, foundation, and tableau is taken and stored as a "gameSnapshot" object and pushed into the stack. When the undo button is pushed, the previous game state is popped from the stack and implemented. 
 
 ### Game Logic - Winning
+
+<img src="assets/winning.png" alt="Logo" width="900" height="600">
 
 At each update cycle, the win condition is checked. The win condition simply checks if each foundation pile has a size of 12 cards, and if so returns true or otherwise false. If the win condition is met, the update method will set the boolean "gameIsWon" to true which will trigger the winning animation to be displayed. The animation will run in a loop until the game is exited or a new game is started.
 
@@ -209,6 +216,8 @@ The rendering logic can be found in the Klondike class, in the aptly named rende
 10. Draw the hand object
 
 ### Options Menu
+
+<img src="assets/menuLayout.png" alt="Menu" width="456" height="685">
 
 The option menu allows the user additional actions that cannot be accessed from the main play "scene." In order to launch the option menu, the user should click the option button in the corner. Doing so changes the boolean "optionsPressed" to true, which in turn will render the menu images, and allow menu buttons to be clicked. This is handled in the render and checkIfCardClicked methods. From the options menu, the user is also able to toggle on and off the music and SFX, start a new game, exit the game, or return to the main menu (still in progress) The large menu buttons will also change to be colored if the user hovers over them, which is handled in the SolitaireInputProcessor class in the mouseMoved method. 
 
