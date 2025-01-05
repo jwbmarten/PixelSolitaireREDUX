@@ -65,16 +65,18 @@
     </li>
     <li>
       <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
-      </ul>
     </li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
+    <li><a href="#project-and-game-logic">Project & Game Logic</a></li>
+        <ul>
+        <li><a href="#libgdx">LibGDX</a></li>
+        <li><a href="#game-set-up">Game Set Up</a></li>
+        <li><a href="#interactivity">Interactivity</a></li>
+        <li><a href="#undo">Undo</a></li>
+        <li><a href="#winning">Winning</a></li>
+        <li><a href="#rendering">Rendering</a></li>
+        <li><a href="#options-menu">Options Menu</a></li>
+        <li><a href="#music-and-sfx">Music & SFX</a></li>
+      </ul>
     <li><a href="#acknowledgments">Acknowledgments</a></li>
   </ol>
 </details>
@@ -86,7 +88,7 @@
 
 <img src="assets/backgroundNEW.png" alt="Logo" width="900" height="600">
 
-Growing up I spent most of my summers with my Grandpa. Nearly every night he would sit at the kitchen table playing round after round with his old card deck he had since his Air Force days. As a gift to him, and a challenge to myself, I wanted to create a desktop version of the game that he would be able to easily install and play on his Windows machine, and thus PixelSolitaire was born. Rather than use a simplified game engine such as Unity or Godot, I wanted to write as much of the game myself as I could in a feasible timeframe. I settled on using LibGDX, which is a basic game framework written in Java and has a small but dedicated userbase. 
+Growing up, I spent summers with my grandfather, who often passed the evenings playing solitaire at the kitchen table with a well-worn deck of cards from his Air Force days. As a gift to him, and a challenge to myself, I wanted to create a desktop version of the game that he could to easily install and play on his Windows machine. Rather than use a simplified game engine such as Unity or Godot, I wanted to write as much of the game myself as I could in a feasible timeframe. I settled on using LibGDX, which is a basic game framework written in Java and has a small but dedicated userbase. 
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
@@ -132,7 +134,7 @@ To get started quickly on Windows, the dsitribution zip file [can be downloaded 
 
 
 <!-- USAGE EXAMPLES -->
-## Project & Game Logic
+## Project and Game Logic
 
 ### LibGDX 
 
@@ -145,7 +147,7 @@ Step 1 is run only once when the game is first launched, and then steps 2 and 3 
 
 <img src="assets/gameLayout.png" alt="Logo" width="900" height="500">
 
-### Game Logic - Set Up
+### Game Set Up
 
 The bulk of the game logic can be found in the Java class: 
    ```sh
@@ -165,7 +167,7 @@ The game setup is performed in the Klondike constructor method - which primarily
    ```
 
 
-### Game Logic - Interactivity
+### Interactivity
 
 To properly emulate the classic desktop Solitaire experience, it is important to give users a high degree of freedom and account for many different scenarios. In all cases, however, user interactivity is done with a mouse click, mouse click-release, or mouse movement. LibGDX provides an interface for handling inputs named InputProcessor, and you can view the implementation I have created in the Java class below: 
 
@@ -190,11 +192,11 @@ checkIfCardClicked takes a given X-Y position (which is provided by SolitaireInp
 
 checkIfCardPlaced does not take any arguments directly, but is called when touchUp is executed if there is an active card and will return a boolean indicating if there was a successful placement. The logic is broken out depending on what card "type" (i.e. a tableau card, a foundation card, or a card from the draw pile) the active card type is. The active card will be checked against the card the cursor is hovering over. If no card is being hovered, then the method will return false to indicate an unsuccessful placement. If there is a card being hovered, then another method will be called (checkCardCanBePlaced) which will determine if the action is valid. Valid conditions will be different if placing a card in the tableau vs the foundation, so you will notice there are two further methods which are called depending on action type. If all checks come back valid, then the card position(s) are updated, the card objects are moved to the corresponding data structures, and then the method returns true - otherwise the method returns false and the cards are returned to their original position. 
 
-### Game Logic - Undo
+### Undo
 
 One of the most popular features of desktop solitaire is the undo function. To implement this functionality, a stack of object type "gameSnapshot" is maintained to track move history. When cards are successfuly moved, a snapshot of the draw deck, waste pile, foundation, and tableau is taken and stored as a "gameSnapshot" object and pushed into the stack. When the undo button is pushed, the previous game state is popped from the stack and implemented. 
 
-### Game Logic - Winning
+### Winning
 
 <img src="assets/winning.png" alt="Logo" width="900" height="500">
 
@@ -221,7 +223,7 @@ The rendering logic can be found in the Klondike class, in the aptly named rende
 
 The option menu allows the user additional actions that cannot be accessed from the main play "scene." In order to launch the option menu, the user should click the option button in the corner. Doing so changes the boolean "optionsPressed" to true, which in turn will render the menu images, and allow menu buttons to be clicked. This is handled in the render and checkIfCardClicked methods. From the options menu, the user is also able to toggle on and off the music and SFX, start a new game, exit the game, or return to the main menu (still in progress) The large menu buttons will also change to be colored if the user hovers over them, which is handled in the SolitaireInputProcessor class in the mouseMoved method. 
 
-### Music & SFX
+### Music and SFX
 
 LibGDX has built in methods for handling music and sfx files. I have stored royalty free music and sfx .mp3 files in the asset folders which are loaded in the Klondike constructor method. The music is started at the onset of the game, and sfx files are played when certain actions are performed (e.g. a card is clicked, or a card is successfully placed.) These can be toggled on and off from the options menu.
 
