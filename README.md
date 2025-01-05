@@ -143,7 +143,7 @@ This game was created using LibGDX, which is a Java-based game framework (NOT an
 
 Step 1 is run only once when the game is first launched, and then steps 2 and 3 are run repeatedly at a frequency determined by the user's machine (effectively being the frame rate).
 
-<img src="assets/gameLayout.png" alt="Logo" width="900" height="600">
+<img src="assets/gameLayout.png" alt="Logo" width="900" height="500">
 
 ### Game Logic - Set Up
 
@@ -196,7 +196,7 @@ One of the most popular features of desktop solitaire is the undo function. To i
 
 ### Game Logic - Winning
 
-<img src="assets/winning.png" alt="Logo" width="900" height="600">
+<img src="assets/winning.png" alt="Logo" width="900" height="500">
 
 At each update cycle, the win condition is checked. The win condition simply checks if each foundation pile has a size of 12 cards, and if so returns true or otherwise false. If the win condition is met, the update method will set the boolean "gameIsWon" to true which will trigger the winning animation to be displayed. The animation will run in a loop until the game is exited or a new game is started.
 
