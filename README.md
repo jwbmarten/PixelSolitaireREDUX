@@ -31,7 +31,7 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/github_username/repo_name">
+  <a href="https://github.com/jwbmarten/PixelSolitaireREDUX">
     <img src="assets/solitaireBanner.png" alt="Logo" width="300" height="180">
   </a>
 
@@ -84,7 +84,7 @@
 <!-- ABOUT THE PROJECT -->
 ## About The Project
 
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
+<img src="assets/backgroundNEW.png" alt="Logo" width="1792" height="1024">
 
 My Grandfather has always been a massive fan of Solitaire. As a kid growing up I spent most of my summers with him, and nearly every night he would sit at the kitchen table playing round after round with his old card deck he had since his Air Force days. As a gift to him, and a challenge to myself, I wanted to create a desktop version of the game that he would be able to easily install and play on his Windows machine, and thus PixelSolitaire was born. Rather than use a simplified game engine such as Unity or Godot, I wanted to write as much of the game myself as I could in a feasible timeframe. I settled on using LibGDX, which is a basic game framework written in Java and has a small but dedicated userbase. 
 
