@@ -940,6 +940,11 @@ public class Klondike extends PlayState{
             }
         }
 
+        if (gameIsWon){
+            Gdx.graphics.requestRendering();
+            sb.draw(winAnimation.getFrame(), 500, 150, 600, 600);
+        }
+
         if (optionsPressed) {
             sb.draw(menu1, menuDrawX, menuDrawY, menuDrawWidth, menuDrawHeight);
             sb. draw(sfxActiveButton, menuDrawX + sfxDrawXOffset, menuDrawY + sfxDrawYOffset, menuSmallButtonWidth, menuSmallButtonHeight);
@@ -950,10 +955,6 @@ public class Klondike extends PlayState{
             sb.draw(exitGameButtonActive, menuDrawX + exitGameXOffset, menuDrawY + exitGameYOffset, exitGameWidth, exitGameHeight);
         }
 
-        if (gameIsWon){
-            Gdx.graphics.requestRendering();
-            sb.draw(winAnimation.getFrame(), 500, 150, 600, 600);
-        }
 
         //draw the hand
         sb.draw(hand.getTexture(), hand.getPosition().x, hand.getPosition().y, hand.getWidth(), hand.getHeight());
