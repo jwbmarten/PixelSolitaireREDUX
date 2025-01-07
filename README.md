@@ -112,7 +112,7 @@ To get started quickly on Windows, the distribution zip file [can be downloaded 
 2. If you do not already have Gradle installed on your machine (standard with most Java IDEs), download a recent version from https://gradle.org/install/
 2. Clone the repo
    ```sh
-   git clone https://github.com/jwbmarten/PixelSolitaireREDUX.git
+   git clone https://github.com/jwbmarten/PixelSolitaireREDUX
    ```
 3. Navigate to the desktop launcher class below and run it
    ```sh
