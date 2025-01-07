@@ -103,7 +103,7 @@ PixelSolitaire has been packaged as a .exe file using Gradle and Construo for si
 
 ### .exe Launch
 
-To get started quickly on Windows, the dsitribution zip file [can be downloaded from Google Drive.](https://drive.google.com/file/d/1BRWi_-KUecY2GWI8tY7hVlsn7TspRgCW/view?usp=drive_link)  Once downloaded, extract the folder and open the file named "PixelSolitaireREDUX-1.0.0" and the game should launch.
+To get started quickly on Windows, the distribution zip file [can be downloaded from Google Drive.](https://drive.google.com/file/d/1BRWi_-KUecY2GWI8tY7hVlsn7TspRgCW/view?usp=drive_link)  Once downloaded, extract the folder and open the file named "PixelSolitaireREDUX-1.0.0" and the game should launch.
 
 
 ### Installation
